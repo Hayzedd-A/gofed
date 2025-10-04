@@ -1,51 +1,237 @@
-create a complete nextjs app for getting products from the database.
-the frontend sends descriptions in form of keywords and an optional image to the backend,  
-the backend uses chatgpt to process the image and then process the response to fetch the database.
-the image will be first saved within the app folder and servered publicly to the chatgpt endpoint.
+🏗️ Project Goal
+
+Create a full Next.js 15.5 application (in JavaScript) using the App Router that allows users to:
+
+Submit a product-search form (with optional image).
+
+The backend uses OpenAI/ChatGPT to analyze the image and combine its insights with other form data to search a MongoDB product database.
+
+Display results in a compact list-style grid with image, title, and brand name.
+
+Clicking an item opens a modal showing full product details and a “View on Website” button linking to the productUrl.
+
+Provide an admin interface and API for managing (CRUD) products in the same MongoDB.
+
+🧩 Core Features
+
+Next.js 15.5 App Router with Server Components, Route Handlers, Server Actions where appropriate.
+
+Tailwind CSS for styling with a professional, responsive UI.
+
+Futura PT font:
+
+<link href="https://fonts.cdnfonts.com/css/futura-pt" rel="stylesheet">
 
 
-the chatgpt endpoint uses the getImageAnalysisForProductSearch function in functions.js, the sample response is included.
-the product model is in the model/product.js
+Theme color: #2b3a55.
 
-this is the sample data of the product, all the fields are not consistent with all the product.
+MongoDB + Mongoose for the Product model.
 
+OpenAI API (ChatGPT Vision) for image analysis.
+
+multer for image upload handling.
+
+Axios or fetch for external calls.
+
+Sharp (optional) for image resizing/optimization.
+
+Full CRUD admin API + simple admin page for product management.
+
+📂 File Structure
+/app
+  /layout.js
+  /page.js                     -> Home + Search form
+  /search/page.js              -> Search result page
+  /search/components/Form.jsx
+  /search/components/Results.jsx
+  /search/components/ProductModal.jsx
+  /admin/page.js               -> Admin dashboard UI (list + CRUD)
+  /admin/components/Form.jsx   -> Add/Edit product
+  /admin/components/List.jsx   -> Products table
+/public/uploads                -> temporary uploaded images
+/lib/db.js                     -> mongoose connection helper
+/models/product.js             -> mongoose schema
+/utils/functions.js            -> shared helpers (converted from express prototype)
+/utils/openaiClient.js         -> openai vision wrapper
+/utils/fileHelpers.js          -> image save/delete helpers
+/pages/api
+  /products/search.js           -> handles user search
+  /products/manage.js           -> handles admin CRUD (GET,POST,PUT,DELETE)
+  /marketing/index.js           -> forwards marketing payload to webhook
+tailwind.config.js
+postcss.config.js
+package.json
+README.md
+.env.example
+
+🧠 Product Schema (/models/product.js)
+const mongoose = require('mongoose');
+
+const ProductSchema = new mongoose.Schema({
+  productName: String,
+  colorwayName: String,
+  imageUrl: String,
+  shortDescription: String,
+  application: String,
+  keywords: [String],
+  colorPalette: [String],
+  performance: String,
+  specSheetLink: String,
+  brandName: String,
+  designerNote: String,
+  productUrl: String,
+  processed: { type: String, default: '' },
+}, { timestamps: true });
+
+module.exports = mongoose.models.Product || mongoose.model('Product', ProductSchema);
+
+
+Include data/sample-products.json to seed the database.
+
+🧾 Frontend Form Fields
 {
-  "_id": {
-    "$oid": "68e12abd0e99057b6f5b0242"
-  },
-  "productName": "S236",
-  "colorwayName": "S236",
-  "imageUrl": "https://bodaq.com/wp-content/uploads/2020/09/S236.jpg",
-  "shortDescription": "Solid color interior film with matte finish",
-  "application": "Wallcovering, Interior Film, Special Finish",
-  "keywords": [
-    "Minimal",
-    "Modern",
-    "Serene",
-    "Sophisticated",
-    "Transitional",
-    "Light"
-  ],
-  "colorPalette": [
-    "Gray",
-    "Taupe",
-    "Neutral",
-    "Beige"
-  ],
-  "performance": "",
-  "specSheetLink": "",
-  "brandName": "Bodaq",
-  "designerNote": "",
-  "productUrl": "https://bodaq.com/product/bodaq-s236-solid-color-interior-film-solid-color-collection/",
-  "processed": "DONE",
-  "__v": 0,
-  "createdAt": {
-    "$date": "2025-10-04T14:10:06.000Z"
-  },
-  "updatedAt": {
-    "$date": "2025-10-04T14:10:06.000Z"
-  }
+  "email": "email",
+  "projectname": "string",
+  "sector": ["hospitality","corporate/workspace","healthcare","education","multi-family","cruise Line","senior living","others"],
+  "budgetTier": ["budget","mid","luxury"],
+  "keywords": "comma,separated,values",
+  "image": "<file>"
 }
 
-use tailwind, design a professional ui using Futura PT font <link href="https://fonts.cdnfonts.com/css/futura-pt" rel="stylesheet">
-theme color is #2b3a55                
+
+sector, keywords, and optional image drive the search.
+
+The full form (except image) is also POSTed to
+https://hook.us2.make.com/naut5o6pqb67b9igrav3fwtkoggncxkd for marketing.
+
+🔄 Backend Flow
+
+POST /api/products/search (multipart/form-data).
+
+Validate inputs.
+
+If image uploaded:
+
+Save temporarily to /public/uploads.
+
+Create a public URL ${NEXT_PUBLIC_BASE_URL}/uploads/<filename>.
+
+Send URL to OpenAI Vision (OPENAI_API_KEY).
+
+Parse response to extract keywords/tags/colors.
+
+Combine extracted image tags + form keywords + sector into a MongoDB $or query on fields:
+productName, shortDescription, keywords, colorPalette, application, brandName.
+
+Limit 20 results, sort by relevance.
+
+Forward marketing payload to MARKETING_WEBHOOK_URL.
+
+Delete temporary image in finally.
+
+Return JSON {products: [...]}.
+
+Admin API (/api/products/manage)
+
+GET: list all products (paginated).
+
+POST: add product.
+
+PUT: update product by ID.
+
+DELETE: remove product by ID.
+
+Protect with simple ADMIN_TOKEN env variable header check (basic auth-like).
+
+🖥️ UI & Design Details
+
+Global styling via Tailwind + Futura PT.
+
+Theme color #2b3a55 for headings, buttons, accents.
+
+Home Page:
+
+Centered form in card layout.
+
+Submit button triggers loading spinner.
+
+Search Results Page:
+
+Compact list/grid layout — like small cards in a vertical scroll list.
+
+Each item: small image (thumb), product name, brand name.
+
+Clicking item opens modal (ProductModal.jsx) showing:
+
+Full product details
+
+Image
+
+“View on Website” button → productUrl
+
+Admin Page:
+
+Table of products (small rows).
+
+Add/Edit/Delete using modal forms.
+
+CRUD operations call /api/products/manage.
+
+🔐 Env Variables
+MONGODB_URI=
+OPENAI_API_KEY=
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+MARKETING_WEBHOOK_URL=https://hook.us2.make.com/naut5o6pqb67b9igrav3fwtkoggncxkd
+ADMIN_TOKEN=your_secret_token
+PORT=3300
+
+🧰 Packages to Install
+next@15.5
+react react-dom
+tailwindcss postcss autoprefixer
+mongoose
+multer
+openai
+axios
+sharp
+dotenv
+
+🧩 Utilities
+
+/lib/db.js – Mongoose connection singleton.
+
+/utils/openaiClient.js – Handles vision/image → keywords extraction.
+
+/utils/fileHelpers.js – save/delete uploaded files.
+
+/utils/functions.js – converted Express prototype helpers.
+
+✅ Acceptance Criteria
+
+npm install && npm run dev starts the app successfully.
+
+Submitting form (with/without image) returns products from MongoDB.
+
+Webhook receives form data (check network tab/log).
+
+Search results render correctly with compact list/grid layout.
+
+Modal shows product details and “View on Website” button.
+
+Admin page allows CRUD operations on products.
+
+Temporary images deleted after each request.
+
+Responsive UI, clean typography (Futura PT), theme color consistent.
+
+📘 README should include
+
+Setup steps & environment variables.
+
+How to seed sample data.
+
+Notes on using OpenAI Vision.
+
+Local vs Production tips (image URL base).
+
+Admin API usage example.
