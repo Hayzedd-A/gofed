@@ -1,0 +1,51 @@
+create a complete nextjs app for getting products from the database.
+the frontend sends descriptions in form of keywords and an optional image to the backend,  
+the backend uses chatgpt to process the image and then process the response to fetch the database.
+the image will be first saved within the app folder and servered publicly to the chatgpt endpoint.
+
+
+the chatgpt endpoint uses the getImageAnalysisForProductSearch function in functions.js, the sample response is included.
+the product model is in the model/product.js
+
+this is the sample data of the product, all the fields are not consistent with all the product.
+
+{
+  "_id": {
+    "$oid": "68e12abd0e99057b6f5b0242"
+  },
+  "productName": "S236",
+  "colorwayName": "S236",
+  "imageUrl": "https://bodaq.com/wp-content/uploads/2020/09/S236.jpg",
+  "shortDescription": "Solid color interior film with matte finish",
+  "application": "Wallcovering, Interior Film, Special Finish",
+  "keywords": [
+    "Minimal",
+    "Modern",
+    "Serene",
+    "Sophisticated",
+    "Transitional",
+    "Light"
+  ],
+  "colorPalette": [
+    "Gray",
+    "Taupe",
+    "Neutral",
+    "Beige"
+  ],
+  "performance": "",
+  "specSheetLink": "",
+  "brandName": "Bodaq",
+  "designerNote": "",
+  "productUrl": "https://bodaq.com/product/bodaq-s236-solid-color-interior-film-solid-color-collection/",
+  "processed": "DONE",
+  "__v": 0,
+  "createdAt": {
+    "$date": "2025-10-04T14:10:06.000Z"
+  },
+  "updatedAt": {
+    "$date": "2025-10-04T14:10:06.000Z"
+  }
+}
+
+use tailwind, design a professional ui using Futura PT font <link href="https://fonts.cdnfonts.com/css/futura-pt" rel="stylesheet">
+theme color is #2b3a55                
