@@ -123,7 +123,7 @@ handler.post(async (req, res) => {
     console.error("Search error:", e);
     res.status(500).json({ success: false, error: e.message });
   } finally {
-    if (tmpPath) deleteFileSafe(tmpPath);
+    // if (tmpPath) deleteFileSafe(tmpPath);
   }
 });
 

@@ -10,6 +10,7 @@ function ensureUploadsDir() {
 }
 
 function saveUploadedFile(file) {
+  console.log("the image file: ", file)
   ensureUploadsDir();
   const filename = `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`;
   const filepath = path.join(uploadsDir, filename);

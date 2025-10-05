@@ -239,6 +239,8 @@ export default function Home() {
 
       const form = e.currentTarget;
       const fd = new FormData(form);
+      // append the image if exist
+      if (imageFile) fd.append("image", imageFile);
 
       // Add selected sectors
       fd.delete("sector");
