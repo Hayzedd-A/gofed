@@ -281,9 +281,9 @@ export default function Home() {
                 GoFed Product Finder
               </h1>
               <p className="text-lg text-gray-600 leading-relaxed">
-                Upload an image and enter details about your project. Our AI
-                will analyze the visual features and search through our catalog
-                to find the perfect products for your needs.
+                Upload your project details, and our AI will instantly match
+                your vision with the perfect materials from our diverse design
+                catalog.
               </p>
 
               <div className="grid grid-cols-3 gap-4 pt-4">
