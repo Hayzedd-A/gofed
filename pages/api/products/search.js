@@ -71,9 +71,7 @@ handler.post(async (req, res) => {
       application: [],
     };
 
-    if (publicImageUrl) {
-      criteria = await analyzeImageWithKeywords(publicImageUrl, userForm);
-    }
+    criteria = await analyzeImageWithKeywords(publicImageUrl, userForm);
 
     const combined = {
       keywords: Array.from(
@@ -93,7 +91,8 @@ handler.post(async (req, res) => {
         relevanceScore: calculateRelevanceScore(p, combined),
       }))
       .filter((p) => p.relevanceScore > 0.1)
-      .sort((a, b) => b.relevanceScore - a.relevanceScore);
+      .sort((a, b) => b.relevanceScore - a.relevanceScore)
+      .slice(0, 100);
 
     const webhookUrl = process.env.MARKETING_WEBHOOK_URL;
     if (webhookUrl) {
