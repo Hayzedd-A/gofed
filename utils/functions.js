@@ -1,4 +1,4 @@
-const { analyzeImageToCriteria } = require('./openaiClient');
+const { analyzeFormToCriteria } = require("./openaiClient");
 
 function buildQueryFromCriteria(criteria) {
   const or = [];
@@ -12,41 +12,85 @@ function buildQueryFromCriteria(criteria) {
   }
 
   if (criteria?.application?.length) {
-    or.push({ application: { $regex: criteria.application.join('|'), $options: 'i' } });
+    or.push({
+      application: { $regex: criteria.application.join("|"), $options: "i" },
+    });
+  }
+  // Performance matching (optional - add if your schema has this field)
+  if (criteria?.performance?.length) {
+    or.push({
+      performance: { $regex: criteria.performance.join("|"), $options: "i" },
+    });
   }
 
   return or.length ? { $or: or } : {};
 }
 
+/**
+ * Calculate relevance score for ranking
+ * @param {Object} product - Product document
+ * @param {Object} criteria - Search criteria
+ * @returns {number} - Relevance score (0-1)
+ */
 function calculateRelevanceScore(product, criteria) {
   let score = 0;
+  const weights = {
+    keywords: 0.35,
+    colorPalette: 0.35,
+    application: 0.2,
+    performance: 0.1,
+  };
 
-  if (Array.isArray(product.keywords) && Array.isArray(criteria.keywords) && criteria.keywords.length) {
-    const matches = product.keywords.filter(k => criteria.keywords.some(ck => ck.toLowerCase() === k.toLowerCase())).length;
-    score += (matches / criteria.keywords.length) * 0.4;
-  } else {
-    score += 0;
+  // Keywords match
+  if (product.keywords && criteria.keywords) {
+    const matches = product.keywords.filter((k) =>
+      criteria.keywords.some((ck) => ck.toLowerCase() === k.toLowerCase())
+    ).length;
+    if (criteria.keywords.length > 0) {
+      score += (matches / criteria.keywords.length) * weights.keywords;
+    }
   }
 
-  if (Array.isArray(product.colorPalette) && Array.isArray(criteria.colorPalette) && criteria.colorPalette.length) {
-    const matches = product.colorPalette.filter(c => criteria.colorPalette.some(cc => cc.toLowerCase() === c.toLowerCase())).length;
-    score += (matches / criteria.colorPalette.length) * 0.4;
-  } else {
-    score += 0;
+  // Color palette match
+  if (product.colorPalette && criteria.colorPalette) {
+    const matches = product.colorPalette.filter((c) =>
+      criteria.colorPalette.some((cc) => cc.toLowerCase() === c.toLowerCase())
+    ).length;
+    if (criteria.colorPalette.length > 0) {
+      score += (matches / criteria.colorPalette.length) * weights.colorPalette;
+    }
   }
 
-  if (typeof product.application === 'string' && Array.isArray(criteria.application) && criteria.application.length) {
-    const appMatch = criteria.application.some(app => product.application.toLowerCase().includes(app.toLowerCase()));
-    score += appMatch ? 0.2 : 0;
+  // Application match
+  if (product.application && criteria.application) {
+    const appMatches = criteria.application.some((app) =>
+      product.application.toLowerCase().includes(app.toLowerCase())
+    );
+    if (appMatches) score += weights.application;
+  }
+
+  // Performance match
+  if (product.performance && criteria.performance) {
+    const perfMatches = criteria.performance.some((perf) =>
+      product.performance.toLowerCase().includes(perf.toLowerCase())
+    );
+    if (perfMatches) score += weights.performance;
   }
 
   return score;
 }
 
 async function analyzeImageWithKeywords(imageUrl, userForm) {
-  if (!process.env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY is not set');
-  const criteria = await analyzeImageToCriteria(imageUrl, userForm);
-  return criteria;
+  if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is not set");
+  const criteria = await analyzeFormToCriteria(imageUrl, userForm);
+  console.log("criteria response", criteria);
+  if (criteria.success) {
+    return criteria?.criteria;
+  } else throw new Error("Error analysing the input");
 }
 
-module.exports = { buildQueryFromCriteria, calculateRelevanceScore, analyzeImageWithKeywords };
+module.exports = {
+  buildQueryFromCriteria,
+  calculateRelevanceScore,
+  analyzeImageWithKeywords,
+};

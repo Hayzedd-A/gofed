@@ -11,7 +11,7 @@ export default function RootLayout({ children }) {
       <head>
         <link href="https://fonts.cdnfonts.com/css/futura-pt" rel="stylesheet" />
       </head>
-      <body className="antialiased font-[\"Futura PT\",_sans-serif] bg-white text-[#1a1a1a]">
+      <body className='antialiased font-["Futura PT",_sans-serif] bg-white text-[#1a1a1a]'>
         {children}
       </body>
     </html>
