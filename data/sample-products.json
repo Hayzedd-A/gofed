@@ -1,0 +1,47 @@
+[
+  {
+    "productName": "Serene Wallcovering",
+    "colorwayName": "Calm Cream",
+    "imageUrl": "https://images.unsplash.com/photo-1582582494700-3bdd16f8a2cf?w=800",
+    "shortDescription": "Minimal textured wallcovering in warm creams and neutrals.",
+    "application": "Wallcovering",
+    "keywords": ["Minimal", "Textural", "Serene"],
+    "colorPalette": ["Cream", "White", "Neutral"],
+    "performance": "Scrubbable",
+    "specSheetLink": "https://example.com/specs/serene.pdf",
+    "brandName": "Calm Interiors",
+    "designerNote": "Pairs well with oak and light stones.",
+    "productUrl": "https://example.com/products/serene-wallcovering",
+    "processed": ""
+  },
+  {
+    "productName": "Coastal Drapery",
+    "colorwayName": "Sea Breeze",
+    "imageUrl": "https://images.unsplash.com/photo-1505691723518-36a5ac3b2a59?w=800",
+    "shortDescription": "Light coastal drapery with blue-gray tones.",
+    "application": "Drapery",
+    "keywords": ["Coastal", "Light", "Minimal"],
+    "colorPalette": ["Blue", "Gray", "White"],
+    "performance": "Bleach Cleanable",
+    "specSheetLink": "https://example.com/specs/coastal.pdf",
+    "brandName": "Oceanic Textiles",
+    "designerNote": "Use for hospitality lounges.",
+    "productUrl": "https://example.com/products/coastal-drapery",
+    "processed": ""
+  },
+  {
+    "productName": "Luxe Rug",
+    "colorwayName": "Gold Vein",
+    "imageUrl": "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=800",
+    "shortDescription": "Glam rug with metallic accents.",
+    "application": "Rug",
+    "keywords": ["Luxe", "Glam", "Bold"],
+    "colorPalette": ["Gold", "Black", "Beige"],
+    "performance": "Easy Clean",
+    "specSheetLink": "https://example.com/specs/luxe-rug.pdf",
+    "brandName": "Prestige Carpets",
+    "designerNote": "Adds upscale contrast to corporate lobbies.",
+    "productUrl": "https://example.com/products/luxe-rug",
+    "processed": ""
+  }
+]
