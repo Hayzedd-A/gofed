@@ -113,7 +113,6 @@ handler.post(async (req, res) => {
     console.error("Search error:", e);
     res.status(500).json({ success: false, error: e.message });
   } finally {
-    // ✅ Delete uploaded blob after processing (optional)
     if (publicImageUrl) await deleteFileSafe(publicImageUrl);
   }
 });
