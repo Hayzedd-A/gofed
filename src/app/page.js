@@ -139,7 +139,7 @@ function ImageUpload({ onImageSelect, image, onRemove }) {
       }`}
     >
       <div className="space-y-3">
-        <div className="text-5xl">📸</div>
+        <div className="text-5xl">🖼️</div>
         <div>
           <p className="text-sm text-gray-600">
             Drag and drop your image here, or
@@ -309,12 +309,6 @@ export default function Home() {
             </div>
 
             <form onSubmit={onSubmit} className="card p-8 space-y-6 shadow-lg">
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 text-sm p-3 rounded-md">
-                  ⚠️ {error}
-                </div>
-              )}
-
               <div>
                 <label className="label">Email Address</label>
                 <input
@@ -411,6 +405,11 @@ export default function Home() {
                   />
                 </div>
               </div>
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 text-sm p-3 rounded-md">
+                  ⚠️ {error}
+                </div>
+              )}
 
               <button
                 // onClick={onSubmit}

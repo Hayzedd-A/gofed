@@ -190,6 +190,7 @@ ${
   };
 
   try {
+    console.log("Sending prompt to AI: ", userPromptText)
     const res = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       payload,

@@ -1,17 +1,17 @@
 import nextConnect from "next-connect";
 import multer from "multer";
 import axios from "axios";
-import { connectDB } from "../../../lib/db.js";
-import Product from "../../../models/product.js";
-import {
+const { connectDB } = require("../../../lib/db.js");
+const Product = require("../../../models/product.js");
+const {
   analyzeImageWithKeywords,
   buildQueryFromCriteria,
   calculateRelevanceScore,
-} from "../../../utils/functions.js";
-import {
+} = require("../../../utils/functions.js");
+const {
   saveUploadedFile,
   deleteFileSafe,
-} from "../../../utils/fileHelpers.js";
+} = require("../../../utils/fileHelpers.js");
 
 export const config = {
   api: { bodyParser: false },
@@ -35,6 +35,7 @@ handler.post(async (req, res) => {
   await connectDB();
 
   const { sector, keywords, email, projectname, budgetTier } = req.body;
+  console.log({ body: req.body });
   let formKeywords = [];
   try {
     formKeywords =
@@ -48,13 +49,17 @@ handler.post(async (req, res) => {
         : [];
   } catch {}
 
+  let tmpPath = null;
   let publicImageUrl = null;
 
   try {
-    // ✅ Upload to Vercel Blob instead of local filesystem
     if (req.file) {
-      const { url } = await saveUploadedFile(req.file);
-      publicImageUrl = url;
+      const { filepath, filename } = saveUploadedFile(req.file);
+      tmpPath = filepath;
+      const base =
+        process.env.NEXT_PUBLIC_BASE_URL ||
+        `http://localhost:${process.env.PORT || 3000}`;
+      publicImageUrl = `${base}/uploads/${filename}`;
     }
 
     const userForm = {
@@ -70,11 +75,11 @@ handler.post(async (req, res) => {
       colorPalette: [],
       application: [],
     };
+    // if (publicImageUrl) {
+    criteria = await analyzeImageWithKeywords(publicImageUrl, userForm);
+    // }
 
-    if (publicImageUrl) {
-      criteria = await analyzeImageWithKeywords(publicImageUrl, userForm);
-    }
-
+    // Build query combining form keywords + criteria
     const combined = {
       keywords: Array.from(
         new Set([...(criteria.keywords || []), ...formKeywords])
@@ -83,7 +88,11 @@ handler.post(async (req, res) => {
       application: criteria.application || [],
     };
 
+    console.log({ combined });
+
     const query = buildQueryFromCriteria(combined);
+
+    console.log({ query }, JSON.stringify(query));
 
     const products = await Product.find(query).lean();
 
@@ -93,7 +102,8 @@ handler.post(async (req, res) => {
         relevanceScore: calculateRelevanceScore(p, combined),
       }))
       .filter((p) => p.relevanceScore > 0.1)
-      .sort((a, b) => b.relevanceScore - a.relevanceScore);
+      .sort((a, b) => b.relevanceScore - a.relevanceScore)
+      // .slice(0, 20);
 
     const webhookUrl = process.env.MARKETING_WEBHOOK_URL;
     if (webhookUrl) {
@@ -113,8 +123,7 @@ handler.post(async (req, res) => {
     console.error("Search error:", e);
     res.status(500).json({ success: false, error: e.message });
   } finally {
-    // ✅ Delete uploaded blob after processing (optional)
-    if (publicImageUrl) await deleteFileSafe(publicImageUrl);
+    if (tmpPath) deleteFileSafe(tmpPath);
   }
 });
 
