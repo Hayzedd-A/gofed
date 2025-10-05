@@ -1,7 +1,7 @@
 {
   "build": {
     "env": {
-      "VERCEL_BLOB_READ_WRITE_TOKEN": "@vercel-blob-token"
+      "VERCEL_BLOB_READ_WRITE_TOKEN": "@vercel_blob_rw_NzKrn1CK0Dw851WE_0T1biCWwmj94beub4LPVfFSnyvgHrl"
     }
   }
 }
