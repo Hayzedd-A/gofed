@@ -107,9 +107,9 @@ export default function SearchPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   
                   {/* Quick View Badge */}
-                  {/* <div className="absolute bottom-2 right-2 bg-white px-3 py-1 rounded-full text-xs font-medium text-[#2b3a55] opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-lg">
-                    Quick View →
-                  </div> */}
+                  <div className="absolute bottom-2 right-2 bg-white px-3 py-1 rounded-full text-xs font-medium text-[#2b3a55]  transition-opacity duration-300 shadow-lg">
+                    {p.colorwayName}
+                  </div>
                 </div>
 
                 {/* Product Info */}

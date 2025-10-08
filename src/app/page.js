@@ -278,7 +278,7 @@ export default function Home() {
                 ✨ AI-Powered Search
               </div>
               <h1 className="text-4xl md:text-5xl font-bold text-[#2b3a55]">
-                GoFed Product Finder
+                MOODbrary Product Finder
               </h1>
               <p className="text-lg text-gray-600 leading-relaxed">
                 Upload your project details, and our AI will instantly match

@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "GoFed Product Finder",
+  title: "MOODbrary Product Finder",
   description: "Search commercial interiors products with AI assistance",
 };
 
