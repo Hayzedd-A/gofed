@@ -1,9 +1,15 @@
-import "./globals.css";
+"use client";
 
-export const metadata = {
-  title: "MOODbrary Product Finder",
-  description: "Search commercial interiors products with AI assistance",
-};
+import "./globals.css";
+import { AuthProvider } from "./components/AuthContext";
+import Nav from "./components/Nav";
+import LoginModal from "./components/LoginModal";
+import SignupModal from "./components/SignupModal";
+
+// export const metadata = {
+//   title: "MOODbrary Product Finder",
+//   description: "Search commercial interiors products with AI assistance",
+// };
 
 export default function RootLayout({ children }) {
   return (
@@ -12,7 +18,12 @@ export default function RootLayout({ children }) {
         <link href="https://fonts.cdnfonts.com/css/futura-pt" rel="stylesheet" />
       </head>
       <body className='antialiased font-["Futura PT",_sans-serif] bg-white text-[#1a1a1a]'>
-        {children}
+        <AuthProvider>
+          <Nav />
+          {children}
+          <LoginModal />
+          <SignupModal />
+        </AuthProvider>
       </body>
     </html>
   );

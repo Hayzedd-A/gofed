@@ -1,11 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
 import ProductModal from "./components/ProductModal";
+import { useAuth } from "../components/AuthContext";
 
 export default function SearchPage() {
   const [items, setItems] = useState([]);
   const [active, setActive] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { user, addToFavorites, removeFromFavorites, isFavorite, openLoginModal } = useAuth();
 
   useEffect(() => {
     try {
@@ -17,6 +19,20 @@ export default function SearchPage() {
       setLoading(false);
     }
   }, []);
+
+  const handleFavoriteClick = async (_id) => {
+    if (!user) {
+      openLoginModal();
+      return;
+    }
+    console.log("fav clicked", _id)
+    
+    if (isFavorite(_id)) {
+      await removeFromFavorites(_id);
+    } else {
+      await addToFavorites(_id);
+    }
+  };
 
   if (loading) {
     return (
@@ -98,14 +114,25 @@ export default function SearchPage() {
               >
                 {/* Image Container */}
                 <div className="relative overflow-hidden bg-gray-100">
-                  <img 
-                    src={p.imageUrl} 
-                    alt={p.productName} 
-                    className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300" 
+                  <img
+                    src={p.imageUrl}
+                    alt={p.productName}
+                    className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
                     loading="lazy"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  
+
+                  {/* Favorite Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFavoriteClick(p._id)
+                    }}
+                    className="absolute top-2 right-2 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-200"
+                  >
+                    {isFavorite(p._id) ? '❤️' : '🤍'}
+                  </button>
+
                   {/* Quick View Badge */}
                   <div className="absolute bottom-2 right-2 bg-white px-3 py-1 rounded-full text-xs font-medium text-[#2b3a55]  transition-opacity duration-300 shadow-lg">
                     {p.colorwayName}

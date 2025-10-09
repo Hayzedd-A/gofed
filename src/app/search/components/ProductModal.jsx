@@ -1,6 +1,10 @@
 "use client";
 
+import { useAuth } from "../../components/AuthContext";
+
 export default function ProductModal({ product, onClose }) {
+  const { user, addToFavorites, openLoginModal } = useAuth();
+
   if (!product) return null;
 
   return (
@@ -16,16 +20,29 @@ export default function ProductModal({ product, onClose }) {
           <div><span className="font-medium">Colorway:</span> {product.colorwayName || '-'} </div>
           <div className="mt-2">{product.shortDescription}</div>
           <div className="mt-2"><span className="font-medium">Application:</span> {product.application}</div>
-          <div className="mt-2"><span className="font-medium">Keywords:</span> {(product.keywords || []).join(', ')}</div>
-          <div className="mt-2"><span className="font-medium">Color Palette:</span> {(product.colorPalette || []).join(', ')}</div>
+          {/* <div className="mt-2"><span className="font-medium">Keywords:</span> {(product.keywords || []).join(', ')}</div>
+          <div className="mt-2"><span className="font-medium">Color Palette:</span> {(product.colorPalette || []).join(', ')}</div> */}
         </div>
-        <div className="mt-4 flex gap-3">
+        <div className="mt-4 flex gap-3 items-center">
           {product.specSheetLink && (
             <a href={product.specSheetLink} target="_blank" className="btn-theme">Spec Sheet</a>
           )}
           {product.productUrl && (
             <a href={product.productUrl} target="_blank" className="btn-theme">View on Website</a>
           )}
+          <button
+            onClick={() => {
+              if (user) {
+                addToFavorites(product._id);
+              } else {
+                openLoginModal();
+              }
+            }}
+            className="text-red-500 hover:text-red-700 text-xl ml-auto"
+            aria-label="Add to favorites"
+          >
+            ❤️
+          </button>
         </div>
       </div>
     </div>
