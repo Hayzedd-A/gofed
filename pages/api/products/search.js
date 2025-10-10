@@ -2,6 +2,8 @@ import nextConnect from "next-connect";
 import multer from "multer";
 import axios from "axios";
 import { connectDB } from "../../../lib/db.js";
+import Territory from "../../../models/territory";
+
 import Product from "../../../models/product.js";
 import {
   analyzeImageWithKeywords,
@@ -12,6 +14,7 @@ import {
   saveUploadedFile,
   deleteFileSafe,
 } from "../../../utils/fileHelpers.js";
+import territoryService from "../../../service/territoryService";
 
 export const config = {
   api: { bodyParser: false },
@@ -34,7 +37,7 @@ handler.use(upload.single("image"));
 handler.post(async (req, res) => {
   await connectDB();
 
-  const { sector, keywords, email, projectname, budgetTier } = req.body;
+  const { sector, keywords, email, projectname, budgetTier, territory } = req.body;
   let formKeywords = [];
   try {
     formKeywords =
@@ -83,7 +86,11 @@ handler.post(async (req, res) => {
 
     const query = buildQueryFromCriteria(combined);
 
-    const products = await Product.find(query).lean();
+    // const products = await Product.find(query).lean();
+    const products = await territoryService.getProductsForTerritory(
+      territory,
+      query
+    );
 
     const scored = products
       .map((p) => ({

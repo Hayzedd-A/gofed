@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 
 const SECTORS = [
@@ -222,6 +222,34 @@ export default function Home() {
   const [selectedSectors, setSelectedSectors] = useState([]);
   const [budgetTier, setBudgetTier] = useState("mid");
   const [imageFile, setImageFile] = useState(null);
+  const [territories, setTerritories] = useState([]);
+  const [selectedTerritory, setSelectedTerritory] = useState("");
+  const [loadingTerritories, setLoadingTerritories] = useState(true);
+
+  useEffect(() => {
+    fetchTerritories();
+  }, []);
+
+  async function fetchTerritories() {
+    try {
+      setLoadingTerritories(true);
+      const res = await fetch("/api/products/territory");
+      const data = await res.json();
+      
+      if (data.success && data.territories) {
+        setTerritories(data.territories);
+        // Set default to first territory or a common one
+        if (data.territories.length > 0) {
+          setSelectedTerritory(data.territories[0].code);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load territories:", err);
+      setError("Failed to load territories");
+    } finally {
+      setLoadingTerritories(false);
+    }
+  }
 
   const toggleSector = (sector) => {
     setSelectedSectors((prev) =>
@@ -231,21 +259,38 @@ export default function Home() {
     );
   };
 
+  // Group territories by region
+  const groupedTerritories = territories.reduce((acc, territory) => {
+    if (!acc[territory.region]) {
+      acc[territory.region] = [];
+    }
+    acc[territory.region].push(territory);
+    return acc;
+  }, {});
+
   async function onSubmit(e) {
     try {
       e.preventDefault();
       setError("");
+
+      if (!selectedTerritory) {
+        setError("Please select a territory");
+        return;
+      }
+
       setLoading(true);
 
       const form = e.currentTarget;
       const fd = new FormData(form);
-      // append the image if exist
+      
+      // Append the image if exist
       if (imageFile) fd.append("image", imageFile);
 
       // Add selected sectors
       fd.delete("sector");
       selectedSectors.forEach((sector) => fd.append("sector", sector));
       fd.set("budgetTier", budgetTier);
+      fd.set("territory", selectedTerritory);
 
       const res = await fetch("/api/products/search", {
         method: "POST",
@@ -318,6 +363,39 @@ export default function Home() {
                   className="input mt-2"
                   placeholder="you@example.com"
                 />
+              </div>
+
+              <div>
+                <label className="label">
+                  Territory <span className="text-red-500">*</span>
+                </label>
+                {loadingTerritories ? (
+                  <div className="mt-2 p-3 bg-gray-50 rounded-md text-sm text-gray-500">
+                    Loading territories...
+                  </div>
+                ) : (
+                  <select
+                    name="territory"
+                    value={selectedTerritory}
+                    onChange={(e) => setSelectedTerritory(e.target.value)}
+                    required
+                    className="input mt-2"
+                  >
+                    <option value="">Select your territory</option>
+                    {Object.entries(groupedTerritories).map(([region, territoryList]) => (
+                      <optgroup key={region} label={region}>
+                        {territoryList.map((territory) => (
+                          <option key={territory.code} value={territory.code}>
+                            {territory.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                )}
+                <p className="mt-1 text-xs text-gray-500">
+                  📍 Products will be filtered based on availability in your territory
+                </p>
               </div>
 
               <div>
@@ -405,6 +483,7 @@ export default function Home() {
                   />
                 </div>
               </div>
+              
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-600 text-sm p-3 rounded-md">
                   ⚠️ {error}
@@ -412,20 +491,12 @@ export default function Home() {
               )}
 
               <button
-                // onClick={onSubmit}
                 type="submit"
                 className="btn-theme w-full py-3 text-lg"
-                disabled={loading}
+                disabled={loading || loadingTerritories}
               >
                 {loading ? "Searching..." : "🔍 Search Products"}
               </button>
-
-              {/* <div className="text-center text-sm text-gray-500 pt-2">
-                Need to manage products? Visit the{" "}
-                <Link href="/admin" className="text-[#2b3a55] font-medium hover:underline">
-                  Admin Dashboard
-                </Link>
-              </div> */}
             </form>
           </div>
         </div>
