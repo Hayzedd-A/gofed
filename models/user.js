@@ -13,8 +13,23 @@ const UserSchema = new mongoose.Schema({
     required: true,
   },
   favorites: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product',
+    searchCriteria: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'SearchCriteria',
+      required: true,
+    },
+    products: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Product',
+    }],
+    projectName: {
+      type: String,
+      required: true,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
   }],
 }, { timestamps: true });
 

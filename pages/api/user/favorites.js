@@ -1,6 +1,7 @@
 import { connectDB } from '../../../lib/db.js';
 import User from '../../../models/user.js';
 import Product from '../../../models/product.js';
+import SearchCriteria from '../../../models/searchCriteria.js';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -22,34 +23,100 @@ export default async function handler(req, res) {
   }
 
   try {
-    const user = await User.findById(userId).populate('favorites');
-    if (!user) {
-      return res.status(404).json({ success: false, error: 'User not found' });
-    }
-
     if (req.method === 'GET') {
+      const user = await User.findById(userId).populate({
+        path: 'favorites.searchCriteria',
+        model: 'SearchCriteria'
+      }).populate({
+        path: 'favorites.products',
+        model: 'Product'
+      });
+      if (!user) {
+        return res.status(404).json({ success: false, error: 'User not found' });
+      }
       return res.json({ success: true, favorites: user.favorites });
     }
 
     if (req.method === 'POST') {
-      const { productId } = req.body;
-      if (!productId) {
-        return res.status(400).json({ success: false, error: 'Product ID required' });
+      const { productId, searchCriteria } = req.body;
+      if (!productId || !searchCriteria) {
+        return res.status(400).json({ success: false, error: 'Product ID and search criteria required' });
       }
-      if (!user.favorites.includes(productId)) {
-        user.favorites.push(productId);
+
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ success: false, error: 'User not found' });
+      }
+
+      // Find or create search criteria
+      let criteriaDoc = await SearchCriteria.findOne(searchCriteria);
+      if (!criteriaDoc) {
+        criteriaDoc = new SearchCriteria({
+          ...searchCriteria,
+          userId: userId,
+        });
+        await criteriaDoc.save();
+      }
+
+      // Find existing folder or create new one
+      let folder = user.favorites.find(f => f.searchCriteria.toString() === criteriaDoc._id.toString());
+      if (!folder) {
+        folder = {
+          searchCriteria: criteriaDoc._id,
+          products: [],
+          projectName: searchCriteria.projectName || 'Untitled Project',
+        };
+        user.favorites.push(folder);
+      }
+
+      // Add product to folder if not already present
+      if (!folder.products.includes(productId)) {
+        folder.products.push(productId);
         await user.save();
       }
+
+      // Return updated favorites with populated data
+      await user.populate({
+        path: 'favorites.searchCriteria',
+        model: 'SearchCriteria'
+      });
+      await user.populate({
+        path: 'favorites.products',
+        model: 'Product'
+      });
+
       return res.json({ success: true, favorites: user.favorites });
     }
 
     if (req.method === 'DELETE') {
-      const { productId } = req.body;
-      if (!productId) {
-        return res.status(400).json({ success: false, error: 'Product ID required' });
+      const { productId, folderId } = req.body;
+      if (!productId || !folderId) {
+        return res.status(400).json({ success: false, error: 'Product ID and folder ID required' });
       }
-      user.favorites = user.favorites.filter(fav => fav.toString() !== productId);
+
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ success: false, error: 'User not found' });
+      }
+
+      const folder = user.favorites.id(folderId);
+      if (!folder) {
+        return res.status(404).json({ success: false, error: 'Folder not found' });
+      }
+
+      folder.products = folder.products.filter(p => p.toString() !== productId);
       await user.save();
+
+      // Return updated favorites with populated data
+      await user.populate({
+        path: 'favorites.searchCriteria',
+        model: 'SearchCriteria'
+      });
+      await user.populate({
+        path: 'favorites.products',
+        model: 'Product'
+      });
+
       return res.json({ success: true, favorites: user.favorites });
     }
 

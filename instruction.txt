@@ -249,3 +249,30 @@ add new feature to this app as a v2
 
 
 implement the complete user onboarding, authentication and favourite management.
+
+v3
+
+Analyze the current `@gofed-groups` project and implement Version 3 with the following updates:
+
+ 1. Landing Page (Public):
+
+    * Create a new public route `/landing` that serves as a marketing or intro page for unauthenticated users.
+ 2. Protected Home (Search Page):
+
+    * The existing homepage (search page) should now require authentication.
+    * Unauthenticated users should be redirected to the landing page.
+ 3. Product Search Restructuring:
+
+    * Group products that share the same `brandName` into a single product group.
+    * In the product details modal, display the grouped products as variants.
+    * Each variant should show: `image`, `colorwayName`, `application`, and `product link`.
+ 4. Search Criteria Storage:
+
+    * Save every search payload (criteria) in the database.
+    * Include the corresponding AI-generated database query result, if applicable.
+ 5. Favourites Management:
+
+    * When a user adds a product to favourites, also save the associated search criteria.
+    * On the favourites page, group products into collapsible folders by `projectName` (the name under which the search was saved).
+    * When a folder is opened, allow users to rerun the original search to load additional results.
+ 6. Maintain the existing project structure, authentication flow, and theme where possible.

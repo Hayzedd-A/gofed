@@ -9,6 +9,7 @@ export default function FavoritesPage() {
   const [favorites, setFavorites] = useState([]);
   const [active, setActive] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [expandedFolders, setExpandedFolders] = useState(new Set());
 
   useEffect(() => {
     async function fetchFavorites() {
@@ -17,6 +18,8 @@ export default function FavoritesPage() {
         const result = await getFavorites();
         if (result.success) {
           setFavorites(result.favorites);
+          // Expand all folders by default
+          setExpandedFolders(new Set(result.favorites.map((_, index) => index)));
         }
         setLoading(false);
       }
@@ -24,10 +27,26 @@ export default function FavoritesPage() {
     fetchFavorites();
   }, [user]);
 
-  const handleRemoveFavorite = async (productId) => {
-    const result = await removeFromFavorites(productId);
+  const toggleFolder = (folderIndex) => {
+    setExpandedFolders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(folderIndex)) {
+        newSet.delete(folderIndex);
+      } else {
+        newSet.add(folderIndex);
+      }
+      return newSet;
+    });
+  };
+
+  const handleRemoveFavorite = async (productId, folderId) => {
+    const result = await removeFromFavorites(productId, folderId);
     if (result.success) {
-      setFavorites(favorites.filter((p) => p._id !== productId));
+      // Reload favorites after removal
+      const reloadResult = await getFavorites();
+      if (reloadResult.success) {
+        setFavorites(reloadResult.favorites);
+      }
     }
   };
 
@@ -69,7 +88,7 @@ export default function FavoritesPage() {
               <h2 className="text-3xl font-bold text-[#2b3a55]">My Favorites</h2>
               <p className="text-gray-600 mt-1">
                 {favorites.length > 0
-                  ? `You have ${favorites.length} favorite product${favorites.length !== 1 ? 's' : ''}`
+                  ? `${favorites.length} project${favorites.length !== 1 ? 's' : ''} • ${favorites.reduce((sum, folder) => sum + folder.products.length, 0)} saved product${favorites.reduce((sum, folder) => sum + folder.products.length, 0) !== 1 ? 's' : ''}`
                   : 'No favorites yet'
                 }
               </p>
@@ -91,61 +110,104 @@ export default function FavoritesPage() {
           </div>
         )}
 
-        {/* Favorites Grid */}
+        {/* Favorites Folders */}
         {favorites.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {favorites.map((p) => (
-              <div
-                key={p._id}
-                className="group text-left card p-0 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-white"
-              >
-                {/* Image Container */}
-                <div className="relative overflow-hidden bg-gray-100">
-                  <img
-                    src={p.imageUrl}
-                    alt={p.productName}
-                    className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                  {/* Remove Favorite Button */}
-                  <button
-                    onClick={() => handleRemoveFavorite(p._id)}
-                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-red-600"
-                    aria-label="Remove from favorites"
-                  >
-                    ✕
-                  </button>
-
-                  {/* Quick View Badge */}
-                  <div className="absolute bottom-2 right-2 bg-white px-3 py-1 rounded-full text-xs font-medium text-[#2b3a55] transition-opacity duration-300 shadow-lg">
-                    {p.colorwayName}
+          <div className="space-y-6">
+            {favorites.map((folder, folderIndex) => (
+              <div key={folder._id || folderIndex} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                {/* Folder Header */}
+                <div
+                  className="p-4 bg-gray-50 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors"
+                  onClick={() => toggleFolder(folderIndex)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`transform transition-transform ${expandedFolders.has(folderIndex) ? 'rotate-90' : ''}`}>
+                        ▶
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-[#2b3a55]">{folder.projectName}</h3>
+                        <p className="text-sm text-gray-600">
+                          {folder.products.length} product{folder.products.length !== 1 ? 's' : ''} •
+                          Created {new Date(folder.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {folder.searchCriteria?.sectors?.length > 0 && (
+                        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
+                          {folder.searchCriteria.sectors.join(', ')}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* Product Info */}
-                <div className="p-4 space-y-2">
-                  <div className="font-semibold text-gray-900 line-clamp-2 group-hover:text-[#2b3a55] transition-colors">
-                    {p.productName}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      {p.brandName}
-                    </span>
-                  </div>
+                {/* Folder Content */}
+                {expandedFolders.has(folderIndex) && (
+                  <div className="p-4">
+                    {folder.products.length === 0 ? (
+                      <p className="text-gray-500 text-center py-8">No products in this folder</p>
+                    ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {folder.products.map((p) => (
+                          <div
+                            key={p._id}
+                            className="group text-left card p-0 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-white"
+                          >
+                            {/* Image Container */}
+                            <div className="relative overflow-hidden bg-gray-100">
+                              <img
+                                src={p.imageUrl}
+                                alt={p.productName}
+                                className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
+                                loading="lazy"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                  {/* View Details Button */}
-                  <button
-                    onClick={() => setActive(p)}
-                    className="w-full mt-2 px-3 py-1 bg-[#2b3a55] text-white text-sm rounded hover:bg-[#3a4a65] transition-colors"
-                  >
-                    View Details
-                  </button>
-                </div>
+                              {/* Remove Favorite Button */}
+                              <button
+                                onClick={() => handleRemoveFavorite(p._id, folder._id)}
+                                className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-red-600"
+                                aria-label="Remove from favorites"
+                              >
+                                ✕
+                              </button>
 
-                {/* Hover Border Effect */}
-                <div className="absolute inset-0 border-2 border-[#2b3a55] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                              {/* Quick View Badge */}
+                              <div className="absolute bottom-2 right-2 bg-white px-3 py-1 rounded-full text-xs font-medium text-[#2b3a55] transition-opacity duration-300 shadow-lg">
+                                {p.colorwayName}
+                              </div>
+                            </div>
+
+                            {/* Product Info */}
+                            <div className="p-4 space-y-2">
+                              <div className="font-semibold text-gray-900 line-clamp-2 group-hover:text-[#2b3a55] transition-colors">
+                                {p.productName}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                  {p.brandName}
+                                </span>
+                              </div>
+
+                              {/* View Details Button */}
+                              <button
+                                onClick={() => setActive(p)}
+                                className="w-full mt-2 px-3 py-1 bg-[#2b3a55] text-white text-sm rounded hover:bg-[#3a4a65] transition-colors"
+                              >
+                                View Details
+                              </button>
+                            </div>
+
+                            {/* Hover Border Effect */}
+                            <div className="absolute inset-0 border-2 border-[#2b3a55] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>

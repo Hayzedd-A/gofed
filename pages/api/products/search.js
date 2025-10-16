@@ -101,6 +101,16 @@ handler.post(async (req, res) => {
       .sort((a, b) => b.relevanceScore - a.relevanceScore)
       .slice(0, 100);
 
+    // Group products by brandName
+    const groupedProducts = scored.reduce((acc, product) => {
+      const brand = product.brandName;
+      if (!acc[brand]) {
+        acc[brand] = [];
+      }
+      acc[brand].push(product);
+      return acc;
+    }, {});
+
     const webhookUrl = process.env.MARKETING_WEBHOOK_URL;
     if (webhookUrl) {
       try {
@@ -114,7 +124,7 @@ handler.post(async (req, res) => {
       }
     }
 
-    res.json({ success: true, products: scored });
+    res.json({ success: true, products: scored, groupedProducts, imageUrl: publicImageUrl });
   } catch (e) {
     console.error("Search error:", e);
     res.status(500).json({ success: false, error: e.message });

@@ -65,30 +65,32 @@ export function AuthProvider({ children }) {
     return result;
   };
 
-  const addToFavorites = async (productId) => {
+  const addToFavorites = async (productId, searchCriteria) => {
     if (!user) return { success: false, error: "Not authenticated" };
-    
-    const result = await userAuthUtils.addToFavorites(productId);
+
+    const result = await userAuthUtils.addToFavorites(productId, searchCriteria);
     if (result.success) {
-      // Reload favorites to get the complete product data
+      // Reload favorites to get the complete updated data
       await loadFavorites();
     }
     return result;
   };
 
-  const removeFromFavorites = async (productId) => {
+  const removeFromFavorites = async (productId, folderId) => {
     if (!user) return { success: false, error: "Not authenticated" };
-    
-    const result = await userAuthUtils.removeFromFavorites(productId);
+
+    const result = await userAuthUtils.removeFromFavorites(productId, folderId);
     if (result.success) {
-      // Remove from local state immediately for better UX
-      setFavourites(prev => prev.filter(fav => fav._id !== productId));
+      // Reload favorites to get the complete updated data
+      await loadFavorites();
     }
     return result;
   };
 
   const isFavorite = (productId) => {
-    return favourites.some(fav => fav._id === productId);
+    return favourites.some(folder =>
+      folder.products.some(product => product._id === productId)
+    );
   };
 
   const getFavorites = async () => {
