@@ -1,6 +1,8 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../components/AuthContext";
+import { useRouter } from 'next/navigation';
+import { userAuthUtils } from "../../../lib/auth";
 
 const SECTORS = [
   "hospitality",
@@ -225,7 +227,8 @@ export default function SearchPage() {
   const [territories, setTerritories] = useState([]);
   const [selectedTerritory, setSelectedTerritory] = useState("");
   const [loadingTerritories, setLoadingTerritories] = useState(true);
-  const { user, openLoginModal } = useAuth();
+  const { user, openLoginModal, } = useAuth();
+  const router = useRouter()
 
   useEffect(() => {
     if (!user) {
@@ -287,6 +290,7 @@ export default function SearchPage() {
 
       const form = e.currentTarget;
       const fd = new FormData(form);
+      fd.append("email", user.email)
 
       // Append the image if exist
       if (imageFile) fd.append("image", imageFile);
@@ -297,15 +301,19 @@ export default function SearchPage() {
       fd.set("budgetTier", budgetTier);
       fd.set("territory", selectedTerritory);
 
-      const res = await fetch("/api/products/search", {
-        method: "POST",
-        body: fd,
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success)
-        throw new Error(data.error || "Search failed");
+      let res = await userAuthUtils.productSearch(fd)
+
+      // const res = await fetch("/api/products/search", {
+      //   method: "POST",
+      //   body: fd,
+      // });
+      // const data = await res.json();
+      // if (!res.ok || !data.success)
+      //   throw new Error(data.error || "Search failed");
 
       // Store search criteria and results
+      if (!res.success) throw new Error(res.error) 
+      const data = res.data
       sessionStorage.setItem(
         "gofed:searchCriteria",
         JSON.stringify({
@@ -314,7 +322,7 @@ export default function SearchPage() {
           budgetTier,
           territory: selectedTerritory,
           projectName: form.projectname.value,
-          email: form.email.value,
+          email: user.email,
           imageUrl: data.imageUrl,
         })
       );
@@ -322,8 +330,13 @@ export default function SearchPage() {
         "gofed:results",
         JSON.stringify(data.products || [])
       );
-      window.location.href = "/search/results";
+      sessionStorage.setItem(
+        "gofed:criteriaId",
+        data.criteriaId
+      );
+      router.push("/search/results");
     } catch (e) {
+      console.log("error in search", e)
       setError(e.message);
     } finally {
       setLoading(false);
@@ -335,8 +348,12 @@ export default function SearchPage() {
       <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
         <div className="container py-16">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-[#2b3a55] mb-4">Access Required</h2>
-            <p className="text-gray-600">Please login to access the search functionality.</p>
+            <h2 className="text-3xl font-bold text-[#2b3a55] mb-4">
+              Access Required
+            </h2>
+            <p className="text-gray-600">
+              Please login to access the search functionality.
+            </p>
           </div>
         </div>
       </main>
@@ -386,7 +403,7 @@ export default function SearchPage() {
             </div>
 
             <form onSubmit={onSubmit} className="card p-8 space-y-6 shadow-lg">
-              <div>
+              {/* <div>
                 <label className="label">Email Address</label>
                 <input
                   name="email"
@@ -396,7 +413,7 @@ export default function SearchPage() {
                   placeholder="you@example.com"
                   defaultValue={user?.email || ""}
                 />
-              </div>
+              </div> */}
 
               <div>
                 <label className="label">
@@ -415,19 +432,22 @@ export default function SearchPage() {
                     className="input mt-2"
                   >
                     <option value="">Select your territory</option>
-                    {Object.entries(groupedTerritories).map(([region, territoryList]) => (
-                      <optgroup key={region} label={region}>
-                        {territoryList.map((territory) => (
-                          <option key={territory.code} value={territory.code}>
-                            {territory.name}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
+                    {Object.entries(groupedTerritories).map(
+                      ([region, territoryList]) => (
+                        <optgroup key={region} label={region}>
+                          {territoryList.map((territory) => (
+                            <option key={territory.code} value={territory.code}>
+                              {territory.name}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )
+                    )}
                   </select>
                 )}
                 <p className="mt-1 text-xs text-gray-500">
-                  📍 Products will be filtered based on availability in your territory
+                  📍 Products will be filtered based on availability in your
+                  territory
                 </p>
               </div>
 

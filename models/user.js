@@ -12,25 +12,26 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  favorites: [{
-    searchCriteria: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'SearchCriteria',
-      required: true,
-    },
-    products: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Product',
-    }],
-    projectName: {
-      type: String,
-      required: true,
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-  }],
+  fullName: {
+    type: String,
+    trim: true,
+  },
+  designFirmLocation: {
+    type: String,
+    trim: true,
+  },
+  roleDesignFocus: {
+    type: String,
+    trim: true,
+  },
+  curiosity: {
+    type: String,
+    trim: true,
+  },
+  howHeard: {
+    type: String,
+    trim: true,
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.models.User || mongoose.model('User', UserSchema);

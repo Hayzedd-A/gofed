@@ -12,6 +12,7 @@ export function AuthProvider({ children }) {
   const [signupModalOpen, setSignupModalOpen] = useState(false);
   const [favourites, setFavourites] = useState([]);
   const [favouritesLoading, setFavouritesLoading] = useState(false);
+  const [criteriaId, setCriteriaId] = useState(null);
 
   useEffect(() => {
     async function verify() {
@@ -65,15 +66,24 @@ export function AuthProvider({ children }) {
     return result;
   };
 
-  const addToFavorites = async (productId, searchCriteria) => {
+  const addToFavorites = async (productId) => {
     if (!user) return { success: false, error: "Not authenticated" };
+    if (!criteriaId) return { success: false, error: "No search criteria available" };
 
-    const result = await userAuthUtils.addToFavorites(productId, searchCriteria);
-    if (result.success) {
-      // Reload favorites to get the complete updated data
-      await loadFavorites();
+    setFavouritesLoading(true);
+    try {
+      const result = await userAuthUtils.addToFavorites(
+        productId,
+        criteriaId
+      );
+      if (result.success) {
+        // Reload favorites to get the complete updated data
+        await loadFavorites();
+      }
+      return result;
+    } finally {
+      setFavouritesLoading(false);
     }
-    return result;
   };
 
   const removeFromFavorites = async (productId, folderId) => {
@@ -88,8 +98,8 @@ export function AuthProvider({ children }) {
   };
 
   const isFavorite = (productId) => {
-    return favourites.some(folder =>
-      folder.products.some(product => product._id === productId)
+    return favourites.some((folder) =>
+      folder.products.some((product) => product._id === productId)
     );
   };
 
@@ -97,6 +107,23 @@ export function AuthProvider({ children }) {
     if (!user) return { success: false, error: "Not authenticated" };
     return await userAuthUtils.getFavorites();
   };
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="container py-16">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center space-y-4">
+              <div className="w-12 h-12 border-4 border-[#2b3a55] border-t-transparent rounded-full animate-spin mx-auto"></div>
+              <p className="text-gray-600">
+                Loading... <br /> please wait
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <AuthContext.Provider
@@ -113,6 +140,8 @@ export function AuthProvider({ children }) {
         favouritesLoading,
         isFavorite,
         loadFavorites,
+        criteriaId,
+        setCriteriaId,
         loginModalOpen,
         setLoginModalOpen,
         signupModalOpen,

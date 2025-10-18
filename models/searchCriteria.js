@@ -32,6 +32,10 @@ const SearchCriteriaSchema = new mongoose.Schema({
   imageUrl: {
     type: String,
   },
+  combinedQuery: {
+    type: Object,
+    required: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

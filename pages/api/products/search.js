@@ -3,8 +3,12 @@ import multer from "multer";
 import axios from "axios";
 import { connectDB } from "../../../lib/db.js";
 import Territory from "../../../models/territory";
+import SearchCriteria from "../../../models/searchCriteria.js";
 
+import jwt from "jsonwebtoken";
 import Product from "../../../models/product.js";
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+
 import {
   analyzeImageWithKeywords,
   buildQueryFromCriteria,
@@ -35,9 +39,24 @@ const handler = nextConnect({
 handler.use(upload.single("image"));
 
 handler.post(async (req, res) => {
+  let userId;
+  const token = req.headers["authorization"]?.split(" ")[1];
+  if (!token) {
+    console.log("no token");
+    return res.status(401).json({ success: false, error: "Unauthorized" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    userId = decoded.userId;
+  } catch (error) {
+    console.log("error in decoding, ", error);
+    return res.status(401).json({ success: false, error: "Invalid token" });
+  }
   await connectDB();
 
-  const { sector, keywords, email, projectname, budgetTier, territory } = req.body;
+  const { sector, keywords, email, projectname, budgetTier, territory } =
+    req.body;
   let formKeywords = [];
   try {
     formKeywords =
@@ -52,12 +71,14 @@ handler.post(async (req, res) => {
   } catch {}
 
   let publicImageUrl = null;
+  let publicId = null;
 
   try {
-    // ✅ Upload to Vercel Blob instead of local filesystem
+    // ✅ Upload to Cloudinary
     if (req.file) {
-      const { url } = await saveUploadedFile(req.file);
+      const { url, public_id } = await saveUploadedFile(req.file);
       publicImageUrl = url;
+      publicId = public_id;
     }
 
     const userForm = {
@@ -111,6 +132,22 @@ handler.post(async (req, res) => {
       return acc;
     }, {});
 
+    // Save search criteria to database
+    const searchCriteriaDoc = new SearchCriteria({
+      userId,
+      projectName: projectname,
+      email,
+      sectors: userForm.sector,
+      keywords: formKeywords,
+      budgetTier,
+      territory,
+      imageUrl: publicImageUrl,
+      combinedQuery: combined,
+    });
+    await searchCriteriaDoc.save();
+
+   
+
     const webhookUrl = process.env.MARKETING_WEBHOOK_URL;
     if (webhookUrl) {
       try {
@@ -124,12 +161,18 @@ handler.post(async (req, res) => {
       }
     }
 
-    res.json({ success: true, products: scored, groupedProducts, imageUrl: publicImageUrl });
+    res.json({
+      success: true,
+      products: scored,
+      groupedProducts,
+      imageUrl: publicImageUrl,
+      criteriaId: searchCriteriaDoc._id,
+    });
   } catch (e) {
     console.error("Search error:", e);
     res.status(500).json({ success: false, error: e.message });
   } finally {
-    if (publicImageUrl) await deleteFileSafe(publicImageUrl);
+    // Image is already deleted after analysis, no need to delete again
   }
 });
 

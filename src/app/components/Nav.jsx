@@ -62,7 +62,7 @@ export default function Nav() {
                 onClick={onSignupClick}
                 className="px-4 py-2 bg-[#4a5d7a] text-white rounded-md hover:bg-[#5a6d8a] transition-colors"
               >
-                Sign Up
+                Request Beta Access
               </button>
             </>
           )}

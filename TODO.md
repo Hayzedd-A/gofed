@@ -1,20 +1,27 @@
-# Version 3 Updates for Product Finder App
+# Beta Access Request System Implementation
 
-## Pending Tasks
+## Tasks to Complete
 
-- [x] Create SearchCriteria model
-- [x] Create /landing page
-- [x] Update homepage to redirect logic
-- [x] Move search form to /search (protected)
-- [x] Create /search/results page for results
-- [x] Modify search API to group products by brandName
-- [x] Update ProductModal to display variants
-- [x] Update favorites API and model to handle search criteria
-- [x] Modify favorites page UI for collapsible folders
-- [x] Update AuthContext for new favorites logic
-- [x] Update navigation components
+### 1. Database Models
+- [x] Create `models/betaAccessRequest.js` with fields: fullName, email, designFirmLocation, roleDesignFocus, curiosity, howHeard, status, verificationToken, createdAt
+- [x] Update `models/user.js` to add additional fields: fullName, designFirmLocation, roleDesignFocus, curiosity, howHeard
 
-## Followup Steps
+### 2. Frontend Components
+- [x] Modify `src/app/components/SignupModal.jsx` to "Request Beta Access" form with specified fields
+- [x] Create `src/app/setup-password/page.js` for password setup with verification token
 
-- [ ] Verify the changes in the files
-- [ ] Confirm with the user for any additional requirements or modifications
+### 3. API Endpoints
+- [x] Create `pages/api/auth/beta-request.js` for handling beta access request submission
+- [x] Create `pages/api/admin/beta-requests.js` for admin CRUD operations on beta requests
+- [x] Create `pages/api/auth/setup-password.js` for verifying token and completing user registration
+
+### 4. Admin Interface
+- [x] Modify `src/app/admin/page.js` to tabbed interface with "Products" and "Beta Requests" tabs
+- [x] Add beta requests management functionality (view, accept/decline, send verification emails)
+
+### 5. Dependencies & Configuration
+- [x] Install nodemailer for email sending
+- [ ] Configure email service environment variables (SMTP settings)
+
+### 6. Testing
+- [ ] Test complete flow: request → admin review → email → password setup → login

@@ -2,46 +2,67 @@
 import { useEffect, useState } from "react";
 import ProductModal from "../components/ProductModal";
 import { useAuth } from "../../components/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function SearchResultsPage() {
   const [items, setItems] = useState([]);
   const [active, setActive] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchCriteria, setSearchCriteria] = useState(null);
-  const { user, addToFavorites, removeFromFavorites, isFavorite, openLoginModal } = useAuth();
+  const [loadingFavorites, setLoadingFavorites] = useState({});
+
+  const {
+    user,
+    addToFavorites,
+    favourites,
+    removeFromFavorites,
+    isFavorite,
+    openLoginModal,
+    setCriteriaId,
+  } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     try {
       const rawResults = sessionStorage.getItem("gofed:results");
       const rawCriteria = sessionStorage.getItem("gofed:searchCriteria");
+      const rawCriteriaId = sessionStorage.getItem("gofed:criteriaId");
       setItems(rawResults ? JSON.parse(rawResults) : []);
       setSearchCriteria(rawCriteria ? JSON.parse(rawCriteria) : null);
+      if (rawCriteriaId) {
+        setCriteriaId(rawCriteriaId);
+      }
     } catch {
       setItems([]);
       setSearchCriteria(null);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setCriteriaId]);
 
   const handleFavoriteClick = async (_id) => {
     if (!user) {
       openLoginModal();
       return;
     }
-    console.log("fav clicked", _id)
 
-    if (isFavorite(_id)) {
-      // Find the folder containing this product
-      const folder = favourites.find(f =>
-        f.products.some(p => p._id === _id)
-      );
-      if (folder) {
-        await removeFromFavorites(_id, folder._id);
+    // Set loading for this specific product
+    setLoadingFavorites((prev) => ({ ...prev, [_id]: true }));
+
+    try {
+      if (isFavorite(_id)) {
+        const folder = favourites.find((f) =>
+          f.products.some((p) => p._id === _id)
+        );
+        if (folder) {
+          await removeFromFavorites(_id, folder._id);
+        }
+      } else {
+        await addToFavorites(_id);
       }
-    } else {
-      // Add to favorites with search criteria
-      await addToFavorites(_id, searchCriteria);
+    } finally {
+      // Remove loading state
+      setLoadingFavorites((prev) => ({ ...prev, [_id]: false }));
     }
   };
 
@@ -67,16 +88,19 @@ export default function SearchResultsPage() {
         <div className="mb-8 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-3xl font-bold text-[#2b3a55]">Search Results</h2>
+              <h2 className="text-3xl font-bold text-[#2b3a55]">
+                Search Results
+              </h2>
               <p className="text-gray-600 mt-1">
                 {items.length > 0
-                  ? `Found ${items.length} matching product${items.length !== 1 ? 's' : ''}`
-                  : 'No results found'
-                }
+                  ? `Found ${items.length} matching product${
+                      items.length !== 1 ? "s" : ""
+                    }`
+                  : "No results found"}
               </p>
             </div>
             <button
-              onClick={() => window.location.href = "/search"}
+              onClick={() => router.push("/search")}
               className="px-4 py-2 border border-[#2b3a55] text-[#2b3a55] rounded-md hover:bg-[#2b3a55] hover:text-white transition-all"
             >
               ← New Search
@@ -86,18 +110,21 @@ export default function SearchResultsPage() {
           {/* Search Criteria Summary */}
           {searchCriteria && (
             <div className="bg-white p-4 rounded-lg border border-gray-200">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Search Criteria:</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">
+                Search Criteria:
+              </h3>
               <div className="flex flex-wrap gap-2 text-xs">
                 {searchCriteria.projectName && (
                   <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">
                     Project: {searchCriteria.projectName}
                   </span>
                 )}
-                {searchCriteria.sectors && searchCriteria.sectors.length > 0 && (
-                  <span className="px-2 py-1 bg-green-100 text-green-700 rounded">
-                    Sectors: {searchCriteria.sectors.join(', ')}
-                  </span>
-                )}
+                {searchCriteria.sectors &&
+                  searchCriteria.sectors.length > 0 && (
+                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded">
+                      Sectors: {searchCriteria.sectors.join(", ")}
+                    </span>
+                  )}
                 {searchCriteria.budgetTier && (
                   <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded">
                     Budget: {searchCriteria.budgetTier}
@@ -117,14 +144,16 @@ export default function SearchResultsPage() {
         {!items.length && (
           <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-200">
             <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">No Results Found</h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+              No Results Found
+            </h3>
             <p className="text-gray-600 mb-6">
               We couldn't find any products matching your criteria.
               <br />
               Try adjusting your search parameters or upload a different image.
             </p>
             <button
-              onClick={() => window.location.href = "/search"}
+              onClick={() => (window.location.href = "/search")}
               className="btn-theme"
             >
               Try Another Search
@@ -136,7 +165,7 @@ export default function SearchResultsPage() {
         {items.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {items.map((p) => (
-              <button
+              <div
                 key={p._id}
                 onClick={() => setActive(p)}
                 className="group text-left card p-0 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-white"
@@ -153,13 +182,20 @@ export default function SearchResultsPage() {
 
                   {/* Favorite Button */}
                   <button
+                    disabled={loadingFavorites[p._id]}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleFavoriteClick(p._id)
+                      handleFavoriteClick(p._id);
                     }}
                     className="absolute top-2 right-2 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-200"
                   >
-                    {isFavorite(p._id) ? '❤️' : '🤍'}
+                    {loadingFavorites[p._id] ? (
+                      <div className="w-5 h-5 border-2 border-gray-300 border-t-transparent rounded-full animate-spin"></div>
+                    ) : isFavorite(p._id) ? (
+                      "❤️"
+                    ) : (
+                      "🤍"
+                    )}
                   </button>
 
                   {/* Quick View Badge */}
@@ -189,7 +225,7 @@ export default function SearchResultsPage() {
 
                 {/* Hover Border Effect */}
                 <div className="absolute inset-0 border-2 border-[#2b3a55] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-              </button>
+              </div>
             ))}
           </div>
         )}
@@ -204,7 +240,9 @@ export default function SearchResultsPage() {
         )} */}
       </div>
 
-      {active && <ProductModal product={active} onClose={() => setActive(null)} />}
+      {active && (
+        <ProductModal product={active} onClose={() => setActive(null)} />
+      )}
     </main>
   );
 }

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function LandingPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -33,12 +35,12 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-12 space-y-4">
-            <a
+            <Link
               href="/search"
               className="inline-block btn-theme text-lg px-8 py-4"
             >
               Start Searching
-            </a>
+            </Link>
             <p className="text-sm text-gray-500">
               Already have an account? <a href="/search" className="text-[#2b3a55] hover:underline">Sign in to continue</a>
             </p>
